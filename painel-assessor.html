@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assessor Agenda Edu</title>
+<style>
+  :root {
+    --bg: #0b0d13;
+    --bg-2: #0f1117;
+    --card: #171a24;
+    --card-2: #1f2330;
+    --border: #2a2f3e;
+    --fg: #eef0f6;
+    --muted: #8b90a0;
+    --accent: #7c93ff;
+    --accent-2: #9b7cff;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --pink: #f472b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(124,147,255,.10), transparent 60%),
+      radial-gradient(700px 400px at 100% 0%, rgba(155,124,255,.08), transparent 55%),
+      var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    padding: 28px 32px 48px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { font-size: 25px; font-weight: 800; letter-spacing: -.02em; }
+  header h1 span {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .avatar-wrap { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--card-2); border: 2px solid var(--accent);
+    object-fit: cover; cursor: pointer; display: block;
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 0 0 3px rgba(124,147,255,.15);
+  }
+  .avatar:hover { transform: scale(1.05); box-shadow: 0 0 0 4px rgba(124,147,255,.25); }
+  .avatar-placeholder {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--card-2); border: 2px dashed var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 20px; color: var(--muted);
+    transition: border-color .2s, color .2s;
+  }
+  .avatar-placeholder:hover { border-color: var(--accent); color: var(--accent); }
+  #avatar-input { display: none; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .kpi .kpi-val { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+  .kpi .kpi-label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .kpi.c-accent .kpi-val { color: var(--accent); }
+  .kpi.c-green .kpi-val { color: var(--green); }
+  .kpi.c-red .kpi-val { color: var(--red); }
+  .kpi.c-amber .kpi-val { color: var(--amber); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--card-accent, var(--border));
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.2), 0 8px 24px -16px rgba(0,0,0,.5);
+    transition: border-color .2s, transform .15s;
+  }
+  .card:hover { border-left-color: var(--card-accent-hover, var(--card-accent, var(--border))); }
+  .card.c-tarefas { --card-accent: var(--accent); }
+  .card.c-agenda { --card-accent: var(--pink); }
+  .card.c-erros { --card-accent: var(--red); }
+  .card.c-fluxos { --card-accent: var(--amber); }
+  .card.c-ideias { --card-accent: var(--accent-2); }
+  .card.c-prod { --card-accent: var(--green); }
+  .card h2 {
+    font-size: 14.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -.01em;
+  }
+  .card h2 .count {
+    margin-left: auto;
+    background: var(--card-2);
+    color: var(--muted);
+    font-size: 11.5px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .list-scroll { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
+  .list-scroll::-webkit-scrollbar { width: 7px; }
+  .list-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  .list-scroll::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 12px;
+    background: var(--card-2);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13.5px;
+    animation: fadeIn .2s ease;
+    transition: border-color .15s, background .15s;
+  }
+  .item:hover { border-color: var(--border); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+  .item input[type=checkbox] { margin-top: 3px; accent-color: var(--accent); cursor: pointer; width: 16px; height: 16px; }
+  .item.done { opacity: .6; }
+  .item.done .text { text-decoration: line-through; color: var(--muted); }
+  .item .text { flex: 1; }
+  .item .sub { color: var(--muted); font-size: 11.5px; margin-top: 3px; }
+  .badge {
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+  }
+  .badge.alta { background: rgba(248,113,113,.15); color: var(--red); }
+  .badge.media { background: rgba(251,191,36,.15); color: var(--amber); }
+  .badge.baixa { background: rgba(124,147,255,.15); color: var(--accent); }
+  .badge.ok { background: rgba(52,211,153,.15); color: var(--green); }
+  .badge.erro { background: rgba(248,113,113,.15); color: var(--red); }
+  .item-actions { display: flex; gap: 6px; align-items: center; }
+  .del {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 17px; line-height: 1; padding: 2px 5px;
+    border-radius: 6px; transition: color .15s, background .15s;
+  }
+  .del:hover { color: var(--red); background: rgba(248,113,113,.12); }
+  .add-row { display: flex; gap: 8px; }
+  .add-row input, .add-row select {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+    font-family: inherit;
+    transition: border-color .15s;
+  }
+  .add-row input:focus, .add-row select:focus { outline: none; border-color: var(--accent); }
+  .add-row input { flex: 1; min-width: 0; }
+  button.add {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: filter .15s, transform .1s;
+  }
+  button.add:hover { filter: brightness(1.12); }
+  button.add:active { transform: scale(.97); }
+  .prod-score { text-align: center; padding: 8px 0; }
+  .prod-big { font-size: 44px; font-weight: 800; letter-spacing: -.03em; }
+  .prod-big.green { color: var(--green); }
+  .prod-big.amber { color: var(--amber); }
+  .prod-big.red { color: var(--red); }
+  .prod-label { color: var(--muted); font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .prod-bar { height: 8px; background: var(--card-2); border-radius: 20px; overflow: hidden; margin-top: 10px; }
+  .prod-bar-fill { height: 100%; border-radius: 20px; transition: width .4s ease; }
+  .prod-note { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  textarea.add-note {
+    width: 100%;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 52px;
+    transition: border-color .15s;
+  }
+  textarea.add-note:focus { outline: none; border-color: var(--accent); }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
+  .chat-card { display: flex; flex-direction: column; --card-accent: var(--accent-2); }
+  .chat-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+  .chat-head .hint { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+  .chat-box {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .chat-box::-webkit-scrollbar { width: 7px; }
+  .chat-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  .msg { display: flex; gap: 8px; max-width: 78%; }
+  .msg.me { align-self: flex-end; flex-direction: row-reverse; }
+  .msg .av-mini {
+    width: 28px; height: 28px; border-radius: 50%; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; background: var(--card); border: 1px solid var(--border);
+  }
+  .msg.me .av-mini { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .msg .bubble {
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    white-space: pre-line;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+  .msg.me .bubble { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border: none; border-radius: 14px 14px 4px 14px; }
+  .msg.bot .bubble { border-radius: 14px 14px 14px 4px; }
+  .chat-suggestions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chat-suggestions button {
+    background: var(--card-2); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .chat-suggestions button:hover { color: var(--fg); border-color: var(--accent); }
+  .chat-icon-btn {
+    background: var(--card-2); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 8px; width: 30px; height: 30px; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color .15s, color .15s;
+  }
+  .chat-icon-btn:hover { color: var(--fg); border-color: var(--accent); }
+  #chat-card.collapsed #chat-body { display: none; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toolbar button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 7px 13px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .toolbar button:hover { color: var(--fg); border-color: var(--accent); }
+  .footer { margin-top: 24px; text-align: center; color: var(--muted); font-size: 12px; }
+
+  @media (max-width: 760px) {
+    body { padding: 16px 14px 36px; }
+    header { flex-direction: column; align-items: flex-start; gap: 14px; }
+    header h1 { font-size: 20px; }
+    .avatar-wrap, header > div:last-child { width: 100%; justify-content: space-between; }
+    .toolbar { width: 100%; }
+    .toolbar button { flex: 1; text-align: center; padding: 9px 6px; font-size: 11.5px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+    .kpi { padding: 11px 12px; }
+    .kpi .kpi-val { font-size: 19px; }
+    .kpi .kpi-label { font-size: 10px; }
+    .grid { grid-template-columns: 1fr; gap: 14px; }
+    .card { padding: 14px; border-radius: 12px; }
+    .list-scroll { max-height: 280px; }
+    .add-row { flex-wrap: wrap; }
+    .add-row input, .add-row select { width: 100%; }
+    .add-row select { width: auto; flex: 1; }
+    button.add { width: 100%; padding: 11px 16px; }
+    .chat-box { height: 260px; }
+    .msg { max-width: 92%; }
+    .chat-suggestions button { font-size: 11px; padding: 6px 10px; }
+    input[type="checkbox"] { width: 20px; height: 20px; }
+  }
+  @media (max-width: 420px) {
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    header h1 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1><span>Assessor</span> Agenda Edu</h1>
+    <div class="meta" id="meta-data"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="avatar-wrap">
+      <div id="avatar-box"></div>
+      <input type="file" id="avatar-input" accept="image/*" onchange="carregarAvatar(event)">
+    </div>
+    <div class="toolbar">
+      <button onclick="exportar()">⬇ Exportar</button>
+      <button onclick="document.getElementById('importar').click()">⬆ Importar</button>
+      <button onclick="resetar()">↺ Resetar</button>
+      <input type="file" id="importar" accept=".json" style="display:none" onchange="importar(event)">
+    </div>
+  </div>
+</header>
+
+<div class="kpi-row" id="kpi-row"></div>
+
+<div class="grid">
+
+  <div class="card c-tarefas">
+    <h2>📋 Minhas Tarefas <span class="count" id="count-tarefas">0</span></h2>
+    <div id="tarefas-lista" class="list-scroll"></div>
+    <div class="add-row">
+      <input type="text" id="nova-tarefa" placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter')addTarefa()">
+      <button class="add" onclick="addTarefa()">+</button>
+    </div>
+  </div>
+
+  <div class="card c-agenda">
+    <h2>📅 Agenda <span class="count" id="count-agenda">0</span></h2>
+    <div id="agenda-lista" class="list-scroll"></div>
+    <div class="add-row">
+      <input type="text" id="nova-reuniao" placeholder="Reunião com quem..." onkeydown="if(event.key==='Enter')addReuniao()">
+      <input type="datetime-local" id="hora-reuniao" style="max-width:160px" onkeydown="if(event.key==='Enter')addReuniao()">
+      <button class="add" onclick="addReuniao()">+</button>
+    </div>
+  </div>
+
+  <div class="card c-erros">
+    <h2>🐛 Erros do n8n <span class="count" id="count-erros">0</span></h2>
+    <div id="erros-lista" class="list-scroll"></div>
+    <div class="add-row">
+      <input type="text" id="novo-erro" placeholder="Fluxo + descrição do erro..." onkeydown="if(event.key==='Enter')addErro()">
+      <select id="gravidade-erro" style="max-width:100px">
+        <option value="alta">alta</option>
+        <option value="media">média</option>
+        <option value="baixa">baixa</option>
+      </select>
+      <button class="add" onclick="addErro()">+</button>
+    </div>
+  </div>
+
+  <div class="card c-fluxos">
+    <h2>🔀 Fluxos em Aberto <span class="count" id="count-fluxos">0</span></h2>
+    <div id="fluxos-lista" class="list-scroll"></div>
+    <div class="add-row">
+      <input type="text" id="novo-fluxo" placeholder="Nome do fluxo..." onkeydown="if(event.key==='Enter')addFluxo()">
+      <button class="add" onclick="addFluxo()">+</button>
+    </div>
+    <div class="sub" style="font-size:12px;color:var(--muted)">Marque "em aberto" quando estiver mexendo — eu aviso antes de você editar.</div>
+  </div>
+
+  <div class="card c-ideias">
+    <h2>💡 Cofre de Ideias <span class="count" id="count-ideias">0</span></h2>
+    <div id="ideias-lista" class="list-scroll"></div>
+    <div class="add-row">
+      <input type="text" id="nova-ideia" placeholder="Ideia inovadora..." onkeydown="if(event.key==='Enter')addIdeia()">
+      <button class="add" onclick="addIdeia()">+</button>
+    </div>
+  </div>
+
+  <div class="card c-prod">
+    <h2>📊 Produtividade de Hoje</h2>
+    <div class="prod-score">
+      <div class="prod-big" id="prod-big">—</div>
+      <div class="prod-label">produtividade estimada</div>
+      <div class="prod-bar"><div class="prod-bar-fill" id="prod-bar"></div></div>
+      <div class="prod-note" id="prod-note">Marque tarefas e conte o dia abaixo.</div>
+    </div>
+    <textarea class="add-note" id="prod-diario" placeholder="Como foi seu dia? O que travou? O que deu certo?" oninput="salvarDiario()"></textarea>
+    <button class="add" style="width:100%;margin-top:4px" onclick="salvarDiario()">💾 Salvar relato do dia</button>
+  </div>
+
+  <div class="card chat-card" style="grid-column: 1 / -1" id="chat-card">
+    <div class="chat-head">
+      <h2>💬 Conversar com o Assistente</h2>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="hint">Motor local de dicas — sem IA real. Para conversa de verdade, use o Hermes.</span>
+        <button class="chat-icon-btn" onclick="limparChat()" title="Excluir conversa">🗑️</button>
+        <button class="chat-icon-btn" onclick="toggleChat()" id="chat-toggle-btn" title="Fechar/abrir conversa">➖</button>
+      </div>
+    </div>
+    <div id="chat-body">
+      <div id="chat-lista" class="chat-box"></div>
+      <div class="chat-suggestions">
+        <button onclick="perguntaRapida('o que atacar hoje?')">🎯 O que atacar hoje?</button>
+        <button onclick="perguntaRapida('o que está atrasado?')">⏰ Atrasadas</button>
+        <button onclick="perguntaRapida('produtividade')">📊 Minha produtividade</button>
+        <button onclick="perguntaRapida('o que já concluí?')">✅ Já concluídas</button>
+      </div>
+      <div class="add-row">
+        <input type="text" id="chat-input" placeholder="Digite sua pergunta..." onkeydown="if(event.key==='Enter')enviarChat()">
+        <button class="add" onclick="enviarChat()">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">Painel salva no seu navegador (localStorage). Exporte o backup de vez em quando. — Assistente Edu</div>
+
+<script>
+const TAREFAS_JM = [
+  { id: 'jm7', text: '[Alta · 22–28/10] Extrair chamados transbordados pela IA + 1ª lista de motivos', done: true },
+  { id: 'jm1', text: '[Alta · 22–30/10] Concluir os bots de implantação, Academy e pré-vendas', done: false },
+  { id: 'jm2', text: '[Alta · 22/10–19/11] Atendimento IA V2: API Zendesk + Pareto de transbordo (meta 40%→50%)', done: false },
+  { id: 'jm8', text: '[Média · 22–30/10] Parametrização das escolas Salesianas (com Nicholas)', done: false },
+  { id: 'jm3', text: '[Média · 22/10–19/11] Prospecção por IA — 100 contatos/semana (N8N + ElevenLabs)', done: false },
+  { id: 'jm4', text: '[Média · 26/10–13/11] Synapse no lugar do SuperAgents (testes com Davi Lins e Havenna)', done: false },
+  { id: 'jm6', text: '[Média · 03–11/11] Desenhar cadência do SDR de IA (e-mail+WhatsApp+ligação, memória por lead)', done: false },
+  { id: 'jm5', text: '[Média · 03–13/11] Painel de métricas das IAs dentro do AgenData', done: false }
+];
+const KEY = 'painel-assessor-edu';
+let dados = carregar();
+
+function carregar() {
+  let d;
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) d = JSON.parse(raw);
+  } catch(e) {}
+  if (!d) d = { tarefas: [], agenda: [], erros: [], fluxos: [], ideias: [], diario: '', avatar: '', chat: [], dataHoje: hojeISO() };
+  if (!d.chat) d.chat = [];
+  if (!d._jmLoaded) {
+    const existentes = new Set(d.tarefas.map(t => t.id));
+    TAREFAS_JM.forEach(t => { if (!existentes.has(t.id)) d.tarefas.push(Object.assign({}, t)); });
+    d._jmLoaded = true;
+  }
+  return d;
+}
+function salvar() {
+  dados.dataHoje = hojeISO();
+  try {
+    localStorage.setItem(KEY, JSON.stringify(dados));
+  } catch (e) {
+    alert('Erro ao salvar: ' + e.message);
+  }
+  render();
+}
+function hojeISO() {
+  const d = new Date();
+  const dias = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+  const meses = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = meses[d.getMonth()];
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mi = String(d.getMinutes()).padStart(2,'0');
+  return `${dias[d.getDay()]} ${dd}/${mm}/${d.getFullYear()}, ${hh}:${mi}`;
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function addTarefa() {
+  const inp = document.getElementById('nova-tarefa');
+  const t = inp.value.trim();
+  if (!t) return;
+  dados.tarefas.push({ id: uid(), text: t, done: false });
+  inp.value = '';
+  salvar();
+}
+function toggleTarefa(id) { const x = dados.tarefas.find(t => t.id === id); if (x) x.done = !x.done; salvar(); }
+function delTarefa(id) { dados.tarefas = dados.tarefas.filter(t => t.id !== id); salvar(); }
+
+function addReuniao() {
+  const inp = document.getElementById('nova-reuniao');
+  const hora = document.getElementById('hora-reuniao');
+  const r = inp.value.trim();
+  if (!r) return;
+  const h = hora.value ? new Date(hora.value).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }) : 'sem hora';
+  dados.agenda.push({ id: uid(), text: r, hora: h, quando: hora.value || '' });
+  inp.value = ''; hora.value = '';
+  salvar();
+}
+function delReuniao(id) { dados.agenda = dados.agenda.filter(r => r.id !== id); salvar(); }
+
+function addErro() {
+  const inp = document.getElementById('novo-erro');
+  const g = document.getElementById('gravidade-erro').value;
+  const e = inp.value.trim();
+  if (!e) return;
+  dados.erros.push({ id: uid(), text: e, gravidade: g, status: 'aberto' });
+  inp.value = '';
+  salvar();
+}
+function toggleErro(id) { const x = dados.erros.find(e => e.id === id); if (x) x.status = x.status === 'aberto' ? 'resolvido' : 'aberto'; salvar(); }
+function delErro(id) { dados.erros = dados.erros.filter(e => e.id !== id); salvar(); }
+
+function addFluxo() {
+  const inp = document.getElementById('novo-fluxo');
+  const f = inp.value.trim();
+  if (!f) return;
+  dados.fluxos.push({ id: uid(), text: f, aberto: false });
+  inp.value = '';
+  salvar();
+}
+function toggleFluxo(id) { const x = dados.fluxos.find(f => f.id === id); if (x) x.aberto = !x.aberto; salvar(); }
+function delFluxo(id) { dados.fluxos = dados.fluxos.filter(f => f.id !== id); salvar(); }
+
+function addIdeia() {
+  const inp = document.getElementById('nova-ideia');
+  const i = inp.value.trim();
+  if (!i) return;
+  dados.ideias.push({ id: uid(), text: i });
+  inp.value = '';
+  salvar();
+}
+function delIdeia(id) { dados.ideias = dados.ideias.filter(i => i.id !== id); salvar(); }
+
+function salvarDiario() { dados.diario = document.getElementById('prod-diario').value; salvar(); }
+
+// CHAT (motor local de dicas — sem IA real, calcula com base nas tarefas)
+function parseData(txt) {
+  // extrai algo como "22–30/10" ou "03–13/11" do texto da tarefa
+  const m = txt.match(/(\d{2})[–-](\d{2})\/(\d{2})/) || txt.match(/(\d{2})\/(\d{2})[–-](\d{2})\/(\d{2})/);
+  return m ? m[0] : '';
+}
+function dicaPrioridade() {
+  const abertas = dados.tarefas.filter(t => !t.done);
+  if (!abertas.length) return 'Tudo concluído! Nenhuma tarefa aberta no momento. 🎉';
+  const altas = abertas.filter(t => t.text.includes('[Alta'));
+  const medias = abertas.filter(t => t.text.includes('[Média'));
+  let r = `Você tem ${abertas.length} tarefa(s) aberta(s): ${altas.length} de prioridade alta, ${medias.length} de média.\n\n`;
+  if (altas.length) {
+    r += `🔴 Ataque primeiro (prioridade alta):\n` + altas.map(t => '• ' + t.text.replace(/^\[.*?\]\s*/, '')).join('\n');
+  } else {
+    r += `Nenhuma de prioridade alta pendente — pode focar nas médias.`;
+  }
+  return r;
+}
+function dicaAtrasado() {
+  // heurística simples: olha pela data final mencionada no texto, compara com hoje (sem parsing robusto de ano)
+  const abertas = dados.tarefas.filter(t => !t.done);
+  const hoje = new Date();
+  const mesAtual = hoje.getMonth() + 1, diaAtual = hoje.getDate();
+  const provaveisAtrasadas = abertas.filter(t => {
+    const m = t.text.match(/–(\d{2})\/(\d{2})\]/) || t.text.match(/–(\d{2})\/(\d{2})/);
+    if (!m) return false;
+    const dia = parseInt(m[1]), mes = parseInt(m[2]);
+    return (mes < mesAtual) || (mes === mesAtual && dia < diaAtual);
+  });
+  if (!provaveisAtrasadas.length) return 'Nenhuma tarefa parece atrasada pelo prazo escrito — mas confirme as datas reais com atenção.';
+  return `Possíveis atrasadas (pelo prazo escrito na tarefa):\n` + provaveisAtrasadas.map(t => '⚠️ ' + t.text.replace(/^\[.*?\]\s*/, '')).join('\n');
+}
+function responderChat(pergunta) {
+  const p = pergunta.toLowerCase();
+  if (/atrasad|venc/.test(p)) return dicaAtrasado();
+  if (/atacar|priorid|come[çc]ar|foco|hoje/.test(p)) return dicaPrioridade();
+  if (/produtiv/.test(p)) {
+    const c = calcProd();
+    return `Sua produtividade estimada hoje é ${c.label} (baseado nas tarefas marcadas como concluídas).`;
+  }
+  if (/concluid|feito|pronto/.test(p)) {
+    const feitas = dados.tarefas.filter(t => t.done);
+    return feitas.length ? `Concluídas:\n` + feitas.map(t => '✅ ' + t.text.replace(/^\[.*?\]\s*/, '')).join('\n') : 'Nenhuma tarefa concluída ainda.';
+  }
+  return 'Posso ajudar com: "o que atacar hoje", "o que está atrasado", "produtividade" ou "o que já concluí". Pergunte de um desses jeitos. Para conversa livre de verdade, use o chat do Hermes.';
+}
+function enviarChat() {
+  const inp = document.getElementById('chat-input');
+  const texto = inp.value.trim();
+  if (!texto) return;
+  dados.chat.push({ id: uid(), autor: 'voce', texto });
+  const resposta = responderChat(texto);
+  dados.chat.push({ id: uid(), autor: 'bot', texto: resposta });
+  inp.value = '';
+  salvar();
+}
+function perguntaRapida(texto) {
+  document.getElementById('chat-input').value = texto;
+  enviarChat();
+}
+function limparChat() {
+  if (!dados.chat.length) return;
+  if (confirm('Excluir toda a conversa com o assistente?')) {
+    dados.chat = [];
+    salvar();
+  }
+}
+function toggleChat() {
+  dados.chatFechado = !dados.chatFechado;
+  salvar();
+}
+
+function carregarAvatar(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const tam = 200;
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > h) { h = Math.round(h * tam / w); w = tam; }
+      else { w = Math.round(w * tam / h); h = tam; }
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      dados.avatar = canvas.toDataURL('image/jpeg', 0.8);
+      try { salvar(); } catch (e) { alert('Não consegui salvar a foto: ' + e.message); }
+    };
+    img.onerror = () => alert('Não consegui ler essa imagem.');
+    img.src = r.result;
+  };
+  r.onerror = () => alert('Erro ao ler o arquivo.');
+  r.readAsDataURL(f);
+}
+function renderAvatar() {
+  const box = document.getElementById('avatar-box');
+  if (dados.avatar) {
+    box.innerHTML = `<img class="avatar" src="${dados.avatar}" alt="foto" onclick="document.getElementById('avatar-input').click()" title="Trocar foto">`;
+  } else {
+    box.innerHTML = `<div class="avatar-placeholder" onclick="document.getElementById('avatar-input').click()" title="Adicionar foto">📷</div>`;
+  }
+}
+function calcProd() {
+  const total = dados.tarefas.length;
+  if (total === 0) return { pct: 0, label: '—', cor: 'amber' };
+  const feitas = dados.tarefas.filter(t => t.done).length;
+  const pct = Math.round(feitas / total * 100);
+  let cor = pct >= 70 ? 'green' : pct >= 40 ? 'amber' : 'red';
+  return { pct, label: pct + '%', cor };
+}
+
+function render() {
+  renderAvatar();
+  document.getElementById('meta-data').textContent = 'Hoje: ' + hojeISO();
+
+  // KPIs do topo
+  const totalT = dados.tarefas.length, feitasT = dados.tarefas.filter(t => t.done).length;
+  const errosAbertos = dados.erros.filter(e => e.status === 'aberto').length;
+  const fluxosAbertos = dados.fluxos.filter(f => f.aberto).length;
+  const pK = calcProd();
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi c-accent"><span class="kpi-val">${feitasT}/${totalT}</span><span class="kpi-label">Tarefas concluídas</span></div>
+    <div class="kpi ${pK.cor === 'green' ? 'c-green' : pK.cor === 'amber' ? 'c-amber' : 'c-red'}"><span class="kpi-val">${pK.label}</span><span class="kpi-label">Produtividade hoje</span></div>
+    <div class="kpi ${errosAbertos ? 'c-red' : 'c-green'}"><span class="kpi-val">${errosAbertos}</span><span class="kpi-label">Erros n8n abertos</span></div>
+    <div class="kpi ${fluxosAbertos ? 'c-amber' : ''}"><span class="kpi-val">${fluxosAbertos}</span><span class="kpi-label">Fluxos em edição</span></div>
+    <div class="kpi"><span class="kpi-val">${dados.agenda.length}</span><span class="kpi-label">Reuniões na agenda</span></div>
+  `;
+
+  const tl = document.getElementById('tarefas-lista');
+  document.getElementById('count-tarefas').textContent = dados.tarefas.length;
+  tl.innerHTML = dados.tarefas.length ? dados.tarefas.map(t => `
+      <div class="item ${t.done ? 'done' : ''}">
+        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTarefa('${t.id}')">
+        <span class="text">${esc(t.text)}</span>
+        <button class="del" onclick="delTarefa('${t.id}')">×</button>
+      </div>`).join('') : '<div class="empty">Nenhuma tarefa. Adicione uma abaixo.</div>';
+
+  const al = document.getElementById('agenda-lista');
+  document.getElementById('count-agenda').textContent = dados.agenda.length;
+  al.innerHTML = dados.agenda.length ? dados.agenda.map(r => `
+      <div class="item">
+        <span class="text">${esc(r.text)}<div class="sub">🕐 ${esc(r.hora)}</div></span>
+        <button class="del" onclick="delReuniao('${r.id}')">×</button>
+      </div>`).join('') : '<div class="empty">Nenhuma reunião agendada.</div>';
+
+  const el = document.getElementById('erros-lista');
+  document.getElementById('count-erros').textContent = dados.erros.length;
+  el.innerHTML = dados.erros.length ? dados.erros.map(e => `
+      <div class="item">
+        <input type="checkbox" ${e.status === 'resolvido' ? 'checked' : ''} onchange="toggleErro('${e.id}')">
+        <span class="text">${esc(e.text)}
+          <div class="sub"><span class="badge ${e.status === 'resolvido' ? 'ok' : 'erro'}">${e.status}</span></div>
+        </span>
+        <span class="item-actions"><span class="badge ${e.gravidade}">${e.gravidade}</span><button class="del" onclick="delErro('${e.id}')">×</button></span>
+      </div>`).join('') : '<div class="empty">Nenhum erro registrado.</div>';
+
+  const fl = document.getElementById('fluxos-lista');
+  document.getElementById('count-fluxos').textContent = dados.fluxos.length;
+  fl.innerHTML = dados.fluxos.length ? dados.fluxos.map(f => `
+      <div class="item">
+        <input type="checkbox" ${f.aberto ? 'checked' : ''} onchange="toggleFluxo('${f.id}')" title="em aberto">
+        <span class="text">${esc(f.text)}
+          <div class="sub">${f.aberto ? '🟢 em aberto — cuidado ao editar' : 'arquivo'}</div>
+        </span>
+        <button class="del" onclick="delFluxo('${f.id}')">×</button>
+      </div>`).join('') : '<div class="empty">Nenhum fluxo em aberto.</div>';
+
+  const il = document.getElementById('ideias-lista');
+  document.getElementById('count-ideias').textContent = dados.ideias.length;
+  il.innerHTML = dados.ideias.length ? dados.ideias.map(i => `
+      <div class="item">
+        <span class="text">${esc(i.text)}</span>
+        <button class="del" onclick="delIdeia('${i.id}')">×</button>
+      </div>`).join('') : '<div class="empty">Cofre vazio. Jogue suas ideias aqui.</div>';
+
+  const p = calcProd();
+  const pb = document.getElementById('prod-big');
+  pb.textContent = p.label;
+  pb.className = 'prod-big ' + p.cor;
+  document.getElementById('prod-bar').style.width = p.pct + '%';
+  document.getElementById('prod-bar').style.background = p.cor === 'green' ? 'var(--green)' : p.cor === 'amber' ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('prod-diario').value = dados.diario || '';
+
+  const cl = document.getElementById('chat-lista');
+  cl.innerHTML = dados.chat.length ? dados.chat.map(m => `
+    <div class="msg ${m.autor === 'voce' ? 'me' : 'bot'}">
+      <div class="av-mini">${m.autor === 'voce' ? '🧑' : '🤖'}</div>
+      <div class="bubble">${esc(m.texto)}</div>
+    </div>
+  `).join('') : '<div class="empty">Clique numa sugestão abaixo ou digite sua pergunta.</div>';
+  cl.scrollTop = cl.scrollHeight;
+
+  const chatCard = document.getElementById('chat-card');
+  chatCard.classList.toggle('collapsed', !!dados.chatFechado);
+  document.getElementById('chat-toggle-btn').textContent = dados.chatFechado ? '➕' : '➖';
+  document.getElementById('chat-toggle-btn').title = dados.chatFechado ? 'Abrir conversa' : 'Fechar conversa';
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function exportar() {
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'painel-assessor-backup-' + hojeISO().replace(/[^\d]/g, '').slice(0,8) + '.json';
+  a.click();
+}
+function importar(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { try { dados = JSON.parse(r.result); salvar(); } catch(e) { alert('Arquivo inválido.'); } };
+  r.readAsText(f);
+}
+function resetar() {
+  if (confirm('Apagar tudo do painel?')) { localStorage.removeItem(KEY); dados = carregar(); salvar(); }
+}
+
+salvar();
+</script>
+</body>
+</html>
