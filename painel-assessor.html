@@ -148,6 +148,16 @@
   .item.done { opacity: .6; }
   .item.done .text { text-decoration: line-through; color: var(--muted); }
   .item .text { flex: 1; }
+  .status-select {
+    font-size: 11.5px; font-weight: 700; border-radius: 20px; padding: 4px 8px 4px 10px;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    cursor: pointer; white-space: nowrap; flex: none;
+  }
+  .status-select.st-a_fazer { color: var(--muted); }
+  .status-select.st-executando { color: var(--accent); border-color: var(--accent); background: rgba(124,147,255,.1); }
+  .status-select.st-pausado { color: var(--amber); border-color: var(--amber); background: rgba(251,191,36,.1); }
+  .status-select.st-validacao { color: var(--accent-2); border-color: var(--accent-2); background: rgba(155,124,255,.1); }
+  .status-select.st-finalizado { color: var(--green); border-color: var(--green); background: rgba(52,211,153,.1); }
   .item .sub { color: var(--muted); font-size: 11.5px; margin-top: 3px; }
   .badge {
     font-size: 10.5px;
@@ -456,6 +466,10 @@ function carregar() {
     TAREFAS_JM.forEach(t => { if (!existentes.has(t.id)) d.tarefas.push(Object.assign({}, t)); });
     d._jmLoaded = true;
   }
+  // migração: garante campo "status" em toda tarefa, derivado do antigo "done" quando ausente
+  d.tarefas.forEach(t => {
+    if (!t.status) t.status = t.done ? 'finalizado' : 'a_fazer';
+  });
   return d;
 }
 function salvar() {
@@ -483,11 +497,15 @@ function addTarefa() {
   const inp = document.getElementById('nova-tarefa');
   const t = inp.value.trim();
   if (!t) return;
-  dados.tarefas.push({ id: uid(), text: t, done: false });
+  dados.tarefas.push({ id: uid(), text: t, status: 'a_fazer', done: false });
   inp.value = '';
   salvar();
 }
-function toggleTarefa(id) { const x = dados.tarefas.find(t => t.id === id); if (x) x.done = !x.done; salvar(); }
+function setStatusTarefa(id, status) {
+  const x = dados.tarefas.find(t => t.id === id);
+  if (x) { x.status = status; x.done = (status === 'finalizado'); }
+  salvar();
+}
 function delTarefa(id) { dados.tarefas = dados.tarefas.filter(t => t.id !== id); salvar(); }
 
 function addReuniao() {
@@ -671,9 +689,15 @@ function render() {
   const tl = document.getElementById('tarefas-lista');
   document.getElementById('count-tarefas').textContent = dados.tarefas.length;
   tl.innerHTML = dados.tarefas.length ? dados.tarefas.map(t => `
-      <div class="item ${t.done ? 'done' : ''}">
-        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTarefa('${t.id}')">
+      <div class="item ${t.status === 'finalizado' ? 'done' : ''}">
         <span class="text">${esc(t.text)}</span>
+        <select class="status-select st-${t.status}" onchange="setStatusTarefa('${t.id}', this.value)">
+          <option value="a_fazer" ${t.status === 'a_fazer' ? 'selected' : ''}>⚪ A fazer</option>
+          <option value="executando" ${t.status === 'executando' ? 'selected' : ''}>🔵 Executando</option>
+          <option value="pausado" ${t.status === 'pausado' ? 'selected' : ''}>⏸️ Pausado</option>
+          <option value="validacao" ${t.status === 'validacao' ? 'selected' : ''}>🟣 Em validação</option>
+          <option value="finalizado" ${t.status === 'finalizado' ? 'selected' : ''}>✅ Finalizado</option>
+        </select>
         <button class="del" onclick="delTarefa('${t.id}')">×</button>
       </div>`).join('') : '<div class="empty">Nenhuma tarefa. Adicione uma abaixo.</div>';
 
